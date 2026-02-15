@@ -1,0 +1,57 @@
+{
+  "asof": "2026-02-13",
+  "prev_asof": "2026-01-15",
+  "regime": {
+    "label": "RISK ON",
+    "last_change": "2025-11-14",
+    "detail": [
+      { "label": "Momentum breadth", "value": "Strong" },
+      { "label": "Leadership concentration", "value": "Moderate" },
+      { "label": "Defensive rotation", "value": "Low" },
+      { "label": "Score dispersion", "value": "Expanding" }
+    ]
+  },
+  "score_distribution": {
+    "total": 1487,
+    "90s": { "count": 104, "pct": 7.0 },
+    "80s": { "count": 162, "pct": 10.9 },
+    "70s": { "count": 223, "pct": 15.0 },
+    "60s": { "count": 289, "pct": 19.4 },
+    "below_60": { "count": 709, "pct": 47.7 }
+  },
+  "leadership_migration": {
+    "entering": [
+      { "ticker": "QBTS", "name": "D-Wave Quantum", "score": 96, "score_delta": 14 },
+      { "ticker": "IBIT", "name": "iShares Bitcoin Trust", "score": 94, "score_delta": 12 },
+      { "ticker": "ANET", "name": "Arista Networks", "score": 93, "score_delta": 9 },
+      { "ticker": "PLTR", "name": "Palantir Technologies", "score": 92, "score_delta": 11 },
+      { "ticker": "AXON", "name": "Axon Enterprise", "score": 91, "score_delta": 8 }
+    ],
+    "exiting": [
+      { "ticker": "ENPH", "name": "Enphase Energy", "score": 78, "score_delta": -16 },
+      { "ticker": "COIN", "name": "Coinbase Global", "score": 82, "score_delta": -12 },
+      { "ticker": "DKNG", "name": "DraftKings", "score": 75, "score_delta": -18 }
+    ]
+  },
+  "sector_intelligence": [
+    { "sector": "Technology", "avg_score": 68.4, "count": 312 },
+    { "sector": "Industrials", "avg_score": 62.1, "count": 198 },
+    { "sector": "Consumer Discretionary", "avg_score": 58.7, "count": 187 },
+    { "sector": "Health Care", "avg_score": 55.2, "count": 214 },
+    { "sector": "Financials", "avg_score": 54.8, "count": 176 },
+    { "sector": "Communication Services", "avg_score": 53.1, "count": 68 },
+    { "sector": "Energy", "avg_score": 48.3, "count": 82 },
+    { "sector": "Materials", "avg_score": 46.7, "count": 54 },
+    { "sector": "Real Estate", "avg_score": 42.1, "count": 67 },
+    { "sector": "Consumer Staples", "avg_score": 39.4, "count": 52 },
+    { "sector": "Utilities", "avg_score": 35.8, "count": 47 }
+  ],
+  "dispersion": {
+    "top10_avg": 97.2,
+    "universe_avg": 52.4,
+    "spread": 44.8,
+    "std_dev": 27.3,
+    "std_dev_change": 1.8
+  },
+  "intelligence_brief": "Leadership remains concentrated in technology and industrial names, with momentum breadth holding steady. Score dispersion widened slightly vs last month (+1.8 std dev points), suggesting increasing differentiation between winners and laggards. Five new names entered the Leadership tier, led by D-Wave Quantum (QBTS) with a +14 point score jump. Three names exited, with DraftKings (DKNG) seeing the largest decline at -18 points. Defensive sectors (Utilities, Consumer Staples) continue to score well below the universe average, consistent with a risk-on regime. No regime change since November 2025."
+}

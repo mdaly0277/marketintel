@@ -9,10 +9,10 @@ function cn(...parts: Array<string | false | null | undefined>) {
 }
 
 const NAV = [
+  { label: "Dashboard", href: "/dashboard" },
   { label: "Screener", href: "/screener" },
   { label: "Model Portfolio", href: "/portfolio" },
   { label: "About", href: "/about" },
-  { label: "Login", href: "/login" },
 ];
 
 export default function TopNav() {
@@ -37,7 +37,7 @@ export default function TopNav() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden sm:flex items-center gap-2">
+          <nav className="hidden sm:flex items-center gap-1.5">
             {NAV.map((item) => {
               const active =
                 pathname === item.href ||
