@@ -108,10 +108,8 @@ function TierRow({
   return (
     <Reveal delay={idx * 80}>
       <div className="group flex items-center gap-0 rounded-lg border border-zinc-800/50 bg-zinc-950/50 transition-all duration-300 hover:border-zinc-700/70 hover:bg-zinc-900/30 overflow-hidden">
-        {/* Accent bar */}
         <div className={`w-1 self-stretch ${accentClass} shrink-0 transition-all duration-300 group-hover:w-1.5`} />
 
-        {/* Content */}
         <div className="flex flex-1 items-center justify-between px-4 py-3.5 sm:px-5 min-w-0">
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-[11px] font-mono font-bold text-zinc-600 w-[52px] shrink-0">{range}</span>
@@ -218,18 +216,7 @@ export default function HomePage() {
             HERO
         ══════════════════════════════════════════════════ */}
         <section className="pt-16 sm:pt-24 pb-20 sm:pb-28">
-          <Reveal>
-            {tierMeta && (
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-zinc-800/60 bg-zinc-900/40 px-3.5 py-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[11px] text-zinc-500">
-                  {tierMeta.nDates} months scored through {tierMeta.asof}
-                </span>
-              </div>
-            )}
-          </Reveal>
-
-          <Reveal delay={100}>
+          <Reveal delay={50}>
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.05]">
               <span className="text-zinc-50">Rank the market.</span>
               <br />
@@ -239,14 +226,14 @@ export default function HomePage() {
             </h1>
           </Reveal>
 
-          <Reveal delay={250}>
+          <Reveal delay={200}>
             <p className="mt-6 text-base sm:text-lg leading-relaxed text-zinc-500 max-w-[520px]">
               AlphaPanel scores 1,500+ equities on a 0–100 scale using
               multi-factor quantitative signals. Updated monthly. Backtested across 9 years of market data.
             </p>
           </Reveal>
 
-          <Reveal delay={400}>
+          <Reveal delay={350}>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="/screener"
@@ -267,15 +254,17 @@ export default function HomePage() {
         </section>
 
         {/* ══════════════════════════════════════════════════
-            TIER EVIDENCE — the proof, right up front
+            TIER EVIDENCE
         ══════════════════════════════════════════════════ */}
         <section className="pb-20 sm:pb-24">
           <Reveal>
-            <div className="mb-6">
+            <div className="mb-4">
               <h2 className="text-lg sm:text-xl font-bold text-zinc-100">Does the score work?</h2>
-              <p className="mt-1.5 text-sm text-zinc-600">
-                Average forward return by tier.
-                {tierMeta && <> {tierMeta.nDates} monthly snapshots, all market conditions.</>}
+              <p className="mt-2 text-sm leading-relaxed text-zinc-500 max-w-[640px]">
+                Each month, every stock in the universe receives a score. The table below groups stocks
+                by their score at that moment and tracks what happened next — the average return
+                over the following 3, 6, and 12 months. This is repeated across every monthly snapshot
+                going back to 2017, covering bull markets, drawdowns, rate hikes, and recoveries.
               </p>
             </div>
           </Reveal>
@@ -304,7 +293,7 @@ export default function HomePage() {
         </section>
 
         {/* ══════════════════════════════════════════════════
-            HOW IT WORKS — three clean blocks
+            HOW IT WORKS
         ══════════════════════════════════════════════════ */}
         <section className="pb-20 sm:pb-24">
           <Reveal>
@@ -315,18 +304,18 @@ export default function HomePage() {
             {[
               {
                 step: "01",
-                title: "Score",
-                body: "Every stock gets a composite score from 0–100 based on three quantitative factors: momentum recovery, trend strength, and drawdown depth.",
+                title: "Signal extraction",
+                body: "The model evaluates cross-sectional momentum, trend structure, and mean-reversion dynamics across the full universe. Each signal is rooted in documented market anomalies from peer-reviewed research.",
               },
               {
                 step: "02",
-                title: "Rank",
-                body: "Scores are percentile-ranked against the full universe of 1,500+ liquid U.S. equities. Top decile stocks enter the Leadership tier.",
+                title: "Composite scoring",
+                body: "Individual signals are percentile-ranked and combined into a single composite score from 0–100. Factor weights are calibrated to maximize forward return separation between the top and bottom deciles.",
               },
               {
                 step: "03",
-                title: "Track",
-                body: "The model portfolio holds the top 25 names, equal-weighted, rebalanced monthly. Full backtest with annual returns and drawdowns.",
+                title: "Portfolio construction",
+                body: "The highest-conviction names form an equal-weight model portfolio, rebalanced monthly. Quality gates filter for liquidity and price integrity before any stock enters the portfolio.",
               },
             ].map((item, i) => (
               <Reveal key={item.step} delay={i * 100}>
@@ -341,7 +330,7 @@ export default function HomePage() {
         </section>
 
         {/* ══════════════════════════════════════════════════
-            NUMBERS STRIP — tight, factual
+            NUMBERS STRIP
         ══════════════════════════════════════════════════ */}
         <Reveal>
           <section className="pb-20 sm:pb-24">
@@ -350,7 +339,7 @@ export default function HomePage() {
                 { val: 1500, suffix: "+", label: "Stocks scored" },
                 { val: 9, suffix: " years", label: "Backtest depth" },
                 { val: 2, prefix: "$", suffix: "B+", label: "Market cap floor" },
-                { val: 3, suffix: "", label: "Factor signals" },
+                { val: 25, suffix: "", label: "Portfolio holdings" },
               ].map((s, i) => (
                 <div key={s.label} className="min-w-[100px]">
                   <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-zinc-100">
