@@ -24,11 +24,6 @@ function toNum(v: any): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/**
- * Format a return value from CSV.
- * CSV stores returns as decimals: 0.05 = 5%, 1.53 = 153%.
- * ALWAYS multiply by 100 — no guessing.
- */
 function fmtRet(v: any): { text: string; sign: "pos" | "neg" | "flat" } {
   const n = toNum(v);
   if (n === null) return { text: "—", sign: "flat" };
@@ -156,7 +151,7 @@ function TierBadge({ score }: { score: number | null }) {
   else if (score >= 70) { label = "Neutral";    cls = "border-zinc-700/50 bg-zinc-800/40 text-zinc-400"; }
   else if (score >= 60) { label = "Caution";    cls = "border-amber-700/50 bg-amber-950/40 text-amber-300"; }
   else                  { label = "Avoid";      cls = "border-red-800/50 bg-red-950/40 text-red-400"; }
-  return <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase ${cls}`}>{label}</span>;
+  return <span className={`inline-block rounded-md border px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold tracking-wide uppercase ${cls}`}>{label}</span>;
 }
 
 function ReturnCell({ value }: { value: any }) {
@@ -168,27 +163,39 @@ function ReturnCell({ value }: { value: any }) {
 /* ── Sortable header ────────────────────────────────────── */
 
 function TH({
-  children, sk, currentSort, currentDir, onClick, align = "left", className = "",
+  children, sk, currentSort, currentDir, onClick, align = "left", className = "", hideOnMobile = false,
 }: {
   children: React.ReactNode; sk: string;
   currentSort: string; currentDir: SortDir;
   onClick: (key: string) => void; align?: "left" | "right" | "center";
-  className?: string;
+  className?: string; hideOnMobile?: boolean;
 }) {
   const active = currentSort === sk;
   const arrow = active ? (currentDir === "desc" ? " ↓" : " ↑") : "";
   const alCls = align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
+  const hideCls = hideOnMobile ? "hidden md:table-cell" : "";
   return (
     <th
       onClick={() => onClick(sk)}
-      className={`cursor-pointer select-none whitespace-nowrap border-b border-zinc-800 bg-zinc-950 px-3 py-3 text-[11px] font-semibold uppercase tracking-wider hover:text-zinc-100 ${
+      className={`cursor-pointer select-none whitespace-nowrap border-b border-zinc-800 bg-zinc-950 px-2 sm:px-3 py-2.5 sm:py-3 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider hover:text-zinc-100 ${
         active ? "text-zinc-100" : "text-zinc-500"
-      } ${alCls} ${className}`}
+      } ${alCls} ${hideCls} ${className}`}
     >
       {children}{arrow}
     </th>
   );
 }
+
+/* ── Mobile return period selector ──────────────────────── */
+
+type PerfKey = "_r5d" | "_r1m" | "_r3m" | "_r6m" | "_r12m";
+const PERIODS: { key: PerfKey; label: string }[] = [
+  { key: "_r5d", label: "5D" },
+  { key: "_r1m", label: "1M" },
+  { key: "_r3m", label: "3M" },
+  { key: "_r6m", label: "6M" },
+  { key: "_r12m", label: "12M" },
+];
 
 /* ── Page ───────────────────────────────────────────────── */
 
@@ -204,6 +211,9 @@ export default function ScreenerPage() {
 
   const [sortKey, setSortKey] = useState("_score");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  // Mobile: single return column with period toggle
+  const [mobilePerf, setMobilePerf] = useState<PerfKey>("_r1m");
 
   /* Load CSV */
   useEffect(() => {
@@ -240,7 +250,6 @@ export default function ScreenerPage() {
   const sectorOpts = useMemo(() => ["All", ...uniqueSorted(rows.map((r) => r._sector))], [rows]);
   const capOpts = useMemo(() => ["All", ...uniqueSorted(rows.map((r) => r._cap))], [rows]);
 
-  /* Filter */
   const filtered = useMemo(() => {
     const query = norm(q).toUpperCase();
     return rows.filter((r) => {
@@ -252,7 +261,6 @@ export default function ScreenerPage() {
     });
   }, [rows, q, sector, cap, top100]);
 
-  /* Sort */
   const sorted = useMemo(() => {
     const mul = sortDir === "desc" ? -1 : 1;
     const numKeys = new Set(["_score", "_price", "_capOrd", "_r5d", "_r1m", "_r3m", "_r6m", "_r12m"]);
@@ -260,13 +268,8 @@ export default function ScreenerPage() {
 
     return [...filtered].sort((a, b) => {
       let av: any, bv: any;
-      if (isNum) {
-        av = toNum(a[sortKey]);
-        bv = toNum(b[sortKey]);
-      } else {
-        av = norm(a[sortKey]);
-        bv = norm(b[sortKey]);
-      }
+      if (isNum) { av = toNum(a[sortKey]); bv = toNum(b[sortKey]); }
+      else { av = norm(a[sortKey]); bv = norm(b[sortKey]); }
       const aNull = av === null || av === "" || av === undefined;
       const bNull = bv === null || bv === "" || bv === undefined;
       if (aNull && bNull) return 0;
@@ -278,13 +281,18 @@ export default function ScreenerPage() {
   }, [filtered, sortKey, sortDir]);
 
   function doSort(key: string) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
-    } else {
+    if (sortKey === key) { setSortDir((d) => (d === "desc" ? "asc" : "desc")); }
+    else {
       setSortKey(key);
       const textKeys = new Set(["_ticker", "_name", "_sector", "_cap"]);
       setSortDir(textKeys.has(key) ? "asc" : "desc");
     }
+  }
+
+  function doMobilePerfSort(key: PerfKey) {
+    setMobilePerf(key);
+    setSortKey(key);
+    setSortDir("desc");
   }
 
   const thProps = { currentSort: sortKey, currentDir: sortDir, onClick: doSort };
@@ -293,20 +301,21 @@ export default function ScreenerPage() {
     <div className="min-h-screen bg-black text-zinc-100 pt-14">
       {/* ── Sticky filters bar ── */}
       <div className="sticky top-14 z-40 bg-black border-b border-zinc-900">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 py-4">
-          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mx-auto max-w-[1600px] px-3 sm:px-6 py-3 sm:py-4">
+          <div className="mb-2 sm:mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-50">Screener</h1>
-              <p className="text-xs text-zinc-500">
-                {rows.length > 0 ? `${rows.length.toLocaleString()} stocks ranked by Smart Score` : "Loading…"}
+              <h1 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-50">Screener</h1>
+              <p className="text-[11px] sm:text-xs text-zinc-500">
+                {rows.length > 0 ? `${rows.length.toLocaleString()} stocks` : "Loading…"}
               </p>
             </div>
-            <div className="text-xs text-zinc-500">
-              Snapshot <span className="text-zinc-300 font-mono">{asOf}</span>
+            <div className="text-[11px] sm:text-xs text-zinc-500">
+              <span className="text-zinc-300 font-mono">{asOf}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          {/* Filters — stacks on mobile */}
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-6 sm:gap-3">
             <div className="lg:col-span-2">
               <input
                 value={q} onChange={(e) => setQ(e.target.value)}
@@ -314,15 +323,13 @@ export default function ScreenerPage() {
                 className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-zinc-600"
               />
             </div>
-            <div>
+            <div className="grid grid-cols-2 gap-2 sm:contents">
               <select
                 value={sector} onChange={(e) => setSector(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600 cursor-pointer"
               >
                 {sectorOpts.map((o) => <option key={o} value={o}>{o === "All" ? "All Sectors" : o}</option>)}
               </select>
-            </div>
-            <div>
               <select
                 value={cap} onChange={(e) => setCap(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600 cursor-pointer"
@@ -348,36 +355,75 @@ export default function ScreenerPage() {
                 Reset
               </button>
             </div>
-            <div className="flex items-center text-xs text-zinc-500">
+            <div className="flex items-center text-[11px] sm:text-xs text-zinc-500">
               Showing <span className="text-zinc-300 font-medium mx-1">{filtered.length.toLocaleString()}</span>
               {top100 && <span className="text-amber-400 ml-1">★</span>}
               {loading && <span className="ml-2 text-zinc-600">Loading…</span>}
               {error && <span className="ml-2 text-red-400">Error: {error}</span>}
             </div>
           </div>
+
+          {/* Mobile period toggle — only shows on small screens */}
+          <div className="flex items-center gap-1 mt-2 md:hidden">
+            <span className="text-[10px] text-zinc-600 mr-1">Return:</span>
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => doMobilePerfSort(p.key)}
+                className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                  mobilePerf === p.key
+                    ? "bg-zinc-700 text-zinc-100"
+                    : "text-zinc-600 hover:text-zinc-300"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ── Table ── */}
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 pb-6">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 overflow-hidden mt-4">
-          <div className="overflow-auto max-h-[calc(100vh-220px)]">
-            <table className="w-full border-collapse text-[13px]">
+      <div className="mx-auto max-w-[1600px] px-2 sm:px-6 pb-6">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 overflow-hidden mt-2 sm:mt-4">
+          <div className="overflow-auto max-h-[calc(100vh-280px)] sm:max-h-[calc(100vh-220px)]">
+            <table className="w-full border-collapse text-[12px] sm:text-[13px]">
               <thead className="sticky top-0 z-30">
                 <tr>
-                  <th className="border-b border-zinc-800 bg-zinc-950 px-2 py-3 text-center text-[11px] font-semibold text-zinc-600 w-8">★</th>
+                  {/* Star — always visible */}
+                  <th className="border-b border-zinc-800 bg-zinc-950 px-1 sm:px-2 py-2.5 text-center text-[10px] sm:text-[11px] font-semibold text-zinc-600 w-6 sm:w-8">★</th>
+
                   <TH {...thProps} sk="_ticker">Ticker</TH>
-                  <TH {...thProps} sk="_name" className="min-w-[120px]">Name</TH>
+
+                  {/* Name — hidden on mobile */}
+                  <TH {...thProps} sk="_name" className="min-w-[120px]" hideOnMobile>Name</TH>
+
                   <TH {...thProps} sk="_score" align="right">Score</TH>
-                  <th className="border-b border-zinc-800 bg-zinc-950 px-3 py-3 text-center text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Tier</th>
+
+                  {/* Tier — always visible */}
+                  <th className="border-b border-zinc-800 bg-zinc-950 px-2 sm:px-3 py-2.5 text-center text-[10px] sm:text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Tier</th>
+
                   <TH {...thProps} sk="_price" align="right">Price</TH>
-                  <TH {...thProps} sk="_sector">Sector</TH>
-                  <TH {...thProps} sk="_capOrd">Cap</TH>
-                  <TH {...thProps} sk="_r5d" align="right">5D</TH>
-                  <TH {...thProps} sk="_r1m" align="right">1M</TH>
-                  <TH {...thProps} sk="_r3m" align="right">3M</TH>
-                  <TH {...thProps} sk="_r6m" align="right">6M</TH>
-                  <TH {...thProps} sk="_r12m" align="right">12M</TH>
+
+                  {/* Sector & Cap — hidden on mobile */}
+                  <TH {...thProps} sk="_sector" hideOnMobile>Sector</TH>
+                  <TH {...thProps} sk="_capOrd" hideOnMobile>Cap</TH>
+
+                  {/* Desktop: all 5 return columns. Mobile: single column from toggle */}
+                  <TH {...thProps} sk="_r5d" align="right" hideOnMobile>5D</TH>
+                  <TH {...thProps} sk="_r1m" align="right" hideOnMobile>1M</TH>
+                  <TH {...thProps} sk="_r3m" align="right" hideOnMobile>3M</TH>
+                  <TH {...thProps} sk="_r6m" align="right" hideOnMobile>6M</TH>
+                  <TH {...thProps} sk="_r12m" align="right" hideOnMobile>12M</TH>
+
+                  {/* Mobile-only return column */}
+                  <th
+                    onClick={() => doSort(mobilePerf)}
+                    className="md:hidden cursor-pointer select-none whitespace-nowrap border-b border-zinc-800 bg-zinc-950 px-2 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-zinc-100"
+                  >
+                    {PERIODS.find((p) => p.key === mobilePerf)?.label ?? "1M"}
+                    {sortKey === mobilePerf ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+                  </th>
                 </tr>
               </thead>
 
@@ -395,33 +441,40 @@ export default function ScreenerPage() {
                       key={r._ticker || i}
                       className={`border-b border-zinc-900/60 transition-colors hover:bg-zinc-900/50 ${gated ? "opacity-30" : ""}`}
                     >
-                      <td className="px-2 py-2.5 text-center text-amber-400 text-sm">
+                      <td className="px-1 sm:px-2 py-2 sm:py-2.5 text-center text-amber-400 text-xs sm:text-sm">
                         {r._top100 ? "★" : ""}
                       </td>
-                      <td className="px-3 py-2.5 font-bold text-zinc-200 tracking-wide whitespace-nowrap">
+                      <td className="px-2 sm:px-3 py-2 sm:py-2.5 font-bold text-zinc-200 tracking-wide whitespace-nowrap text-[12px] sm:text-[13px]">
                         {r._ticker || "—"}
                       </td>
-                      <td className="px-3 py-2.5 text-zinc-400 text-xs truncate max-w-[180px]" title={r._name}>
+                      {/* Name — hidden on mobile */}
+                      <td className="hidden md:table-cell px-3 py-2.5 text-zinc-400 text-xs truncate max-w-[180px]" title={r._name}>
                         {r._name || "—"}
                       </td>
-                      <td className="px-3 py-2.5 text-right">
-                        <span className="font-bold tabular-nums text-zinc-200">
+                      <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right">
+                        <span className="font-bold tabular-nums text-zinc-200 text-[12px] sm:text-[13px]">
                           {score !== null ? score.toFixed(1) : "—"}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-center">
+                      <td className="px-1.5 sm:px-3 py-2 sm:py-2.5 text-center">
                         <TierBadge score={score} />
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums text-zinc-300 whitespace-nowrap">
+                      <td className="px-2 sm:px-3 py-2 sm:py-2.5 text-right tabular-nums text-zinc-300 whitespace-nowrap text-[12px] sm:text-[13px]">
                         {fmtPrice(r._price)}
                       </td>
-                      <td className="px-3 py-2.5 text-zinc-400 text-xs whitespace-nowrap">{r._sector}</td>
-                      <td className="px-3 py-2.5 text-zinc-400 text-xs whitespace-nowrap">{r._cap}</td>
-                      <td className="px-3 py-2.5 text-right"><ReturnCell value={r._r5d} /></td>
-                      <td className="px-3 py-2.5 text-right"><ReturnCell value={r._r1m} /></td>
-                      <td className="px-3 py-2.5 text-right"><ReturnCell value={r._r3m} /></td>
-                      <td className="px-3 py-2.5 text-right"><ReturnCell value={r._r6m} /></td>
-                      <td className="px-3 py-2.5 text-right"><ReturnCell value={r._r12m} /></td>
+                      {/* Sector & Cap — hidden on mobile */}
+                      <td className="hidden md:table-cell px-3 py-2.5 text-zinc-400 text-xs whitespace-nowrap">{r._sector}</td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-zinc-400 text-xs whitespace-nowrap">{r._cap}</td>
+
+                      {/* Desktop: all 5 return columns */}
+                      <td className="hidden md:table-cell px-3 py-2.5 text-right"><ReturnCell value={r._r5d} /></td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-right"><ReturnCell value={r._r1m} /></td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-right"><ReturnCell value={r._r3m} /></td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-right"><ReturnCell value={r._r6m} /></td>
+                      <td className="hidden md:table-cell px-3 py-2.5 text-right"><ReturnCell value={r._r12m} /></td>
+
+                      {/* Mobile: single return column */}
+                      <td className="md:hidden px-2 py-2 text-right"><ReturnCell value={r[mobilePerf]} /></td>
                     </tr>
                   );
                 })}
@@ -429,8 +482,8 @@ export default function ScreenerPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between border-t border-zinc-800 px-4 py-3 text-[11px] text-zinc-600">
-            <span>Click headers to sort • ★ Top 100 by Smart Score • Dimmed = gated</span>
+          <div className="flex items-center justify-between border-t border-zinc-800 px-3 sm:px-4 py-2.5 sm:py-3 text-[10px] sm:text-[11px] text-zinc-600">
+            <span>Click headers to sort • ★ Top 100</span>
             <span>Not financial advice</span>
           </div>
         </div>
@@ -438,4 +491,3 @@ export default function ScreenerPage() {
     </div>
   );
 }
-
