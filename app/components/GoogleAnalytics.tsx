@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 
-const GA_ID = " G-8RKX9SL6SE"; // ← Replace with your real GA4 Measurement ID
+const GA_ID = "G-8RKX9SL6SE"; // ← Replace with your real GA4 Measurement ID
 
 export default function GoogleAnalytics() {
   return (
