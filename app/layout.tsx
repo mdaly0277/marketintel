@@ -1,5 +1,6 @@
 import "./globals.css";
 import TopNav from "./components/TopNav";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 
 export const metadata = {
   title: "AlphaPanel",
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-black text-zinc-100">
+        <GoogleAnalytics />
         <TopNav />
         <main>{children}</main>
       </body>
