@@ -244,6 +244,12 @@ export default function HomePage() {
                 <span className="inline-block ml-2 transition-transform group-hover:translate-x-1">→</span>
               </a>
               <a
+                href="/dashboard"
+                className="rounded-xl border border-zinc-800 bg-zinc-950/80 px-7 py-3.5 text-sm font-medium text-zinc-400 transition-all hover:border-zinc-600 hover:text-zinc-200"
+              >
+                Dashboard
+              </a>
+              <a
                 href="/about"
                 className="rounded-xl border border-zinc-800 bg-zinc-950/80 px-7 py-3.5 text-sm font-medium text-zinc-400 transition-all hover:border-zinc-600 hover:text-zinc-200"
               >
@@ -370,6 +376,9 @@ export default function HomePage() {
                 >
                   Open Screener
                 </a>
+                <a href="/dashboard" className="rounded-xl border border-zinc-800 bg-zinc-950 px-7 py-3 text-sm font-medium text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all">
+                  Dashboard
+                </a>
                 <a href="/portfolio" className="rounded-xl border border-zinc-800 bg-zinc-950 px-7 py-3 text-sm font-medium text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition-all">
                   Model Portfolio
                 </a>
@@ -396,3 +405,4 @@ export default function HomePage() {
     </div>
   );
 }
+
