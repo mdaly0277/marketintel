@@ -142,6 +142,88 @@ function TierRow({
   );
 }
 
+/* ── Animated score card ────────────────────────────────── */
+
+function ScoreCard() {
+  const [score, setScore] = useState(0);
+  const [phase, setPhase] = useState<"counting" | "done">("counting");
+  const ref = useRef<HTMLDivElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          obs.disconnect();
+          const duration = 1800;
+          const target = 94;
+          const startTime = performance.now();
+          const step = (now: number) => {
+            const p = Math.min((now - startTime) / duration, 1);
+            const e = 1 - Math.pow(1 - p, 4);
+            setScore(Math.round(e * target));
+            if (p < 1) requestAnimationFrame(step);
+            else setTimeout(() => setPhase("done"), 200);
+          };
+          requestAnimationFrame(step);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const tier = score >= 90 ? "Leadership" : score >= 80 ? "Positive" : score >= 70 ? "Neutral" : score >= 60 ? "Caution" : "Avoid";
+  const tierColor = score >= 90 ? "border-emerald-700/50 bg-emerald-950/40 text-emerald-300"
+    : score >= 80 ? "border-sky-700/50 bg-sky-950/40 text-sky-300"
+    : score >= 70 ? "border-zinc-700/50 bg-zinc-800/40 text-zinc-400"
+    : score >= 60 ? "border-amber-700/50 bg-amber-950/40 text-amber-300"
+    : "border-red-800/50 bg-red-950/40 text-red-400";
+  const barColor = score >= 90 ? "bg-emerald-500" : score >= 80 ? "bg-sky-500" : score >= 70 ? "bg-zinc-500" : score >= 60 ? "bg-amber-500" : "bg-red-500";
+
+  return (
+    <div ref={ref} className="w-full max-w-[340px]">
+      <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/80 p-5 sm:p-6 backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="text-[11px] text-zinc-600 font-mono">EXAMPLE</div>
+            <div className="text-lg font-bold text-zinc-200 tracking-wide">AAPL</div>
+            <div className="text-[11px] text-zinc-600">Apple Inc.</div>
+          </div>
+          <div className="text-right">
+            <div className="text-4xl font-extrabold tabular-nums text-zinc-100">{score}</div>
+            <div className="text-[10px] text-zinc-600 mt-0.5">/ 100</div>
+          </div>
+        </div>
+
+        {/* Score bar */}
+        <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden mb-3">
+          <div
+            className={`h-full rounded-full ${barColor} transition-all duration-300`}
+            style={{ width: `${score}%`, opacity: 0.7 }}
+          />
+        </div>
+
+        {/* Tier badge */}
+        <div className="flex items-center justify-between">
+          <span className={`inline-block rounded-md border px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase transition-all duration-300 ${tierColor}`}>
+            {tier}
+          </span>
+          {phase === "done" && (
+            <span className="text-[10px] text-zinc-700 animate-pulse">
+              Top {score >= 90 ? "3" : score >= 80 ? "12" : "25"}% of universe
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Page ───────────────────────────────────────────────── */
 
 export default function HomePage() {
@@ -274,15 +356,6 @@ export default function HomePage() {
             </div>
           </Reveal>
 
-          {/* Column headers (desktop) */}
-          <Reveal>
-            <div className="hidden sm:flex items-center justify-end gap-8 px-5 mb-2">
-              {["3M", "6M", "12M"].map((h) => (
-                <div key={h} className="text-[10px] font-bold uppercase tracking-widest text-zinc-700 w-[56px] text-right">{h}</div>
-              ))}
-            </div>
-          </Reveal>
-
           <div className="space-y-1.5">
             <TierRow range="90–100" label="Leadership" accentClass="bg-emerald-500" {...s90} idx={0} />
             <TierRow range="80–89" label="Positive" accentClass="bg-sky-500" {...s80} idx={1} />
@@ -336,16 +409,20 @@ export default function HomePage() {
         </section>
 
         {/* ══════════════════════════════════════════════════
-            NUMBERS STRIP
+            SCORE CARD + NUMBERS
         ══════════════════════════════════════════════════ */}
         <Reveal>
           <section className="pb-20 sm:pb-24">
+            {/* Animated score example */}
+            <div className="flex justify-center mb-12">
+              <ScoreCard />
+            </div>
+
             <div className="flex flex-wrap justify-between gap-6 sm:gap-0 border-y border-zinc-800/50 py-8 px-2">
               {[
                 { val: totalScored ?? 1200, suffix: "+", label: "Stocks scored" },
                 { val: 2, prefix: "$", suffix: "B+", label: "Market cap floor" },
                 { val: nHoldings, suffix: "", label: "Portfolio holdings" },
-                { val: 3, suffix: "", label: "Factor signals" },
               ].map((s, i) => (
                 <div key={s.label} className="min-w-[100px]">
                   <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-zinc-100">
@@ -403,3 +480,4 @@ export default function HomePage() {
     </div>
   );
 }
+
