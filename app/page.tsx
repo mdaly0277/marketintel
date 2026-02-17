@@ -167,12 +167,10 @@ export default function HomePage() {
   const t6 = useMemo(() => indexTierTable(getField(tierBt ?? {}, ["table_6m"], [])), [tierBt]);
   const t12 = useMemo(() => indexTierTable(getField(tierBt ?? {}, ["table_12m"], [])), [tierBt]);
   const counts = useMemo(() => getField(tierBt ?? {}, ["current_counts"], null), [tierBt]);
-  const tierMeta = useMemo(() => {
-    const asof = getField(tierBt ?? {}, ["asof"], null);
-    const nDates = getField(tierBt ?? {}, ["signal_dates_used"], null);
-    if (!asof || !nDates) return null;
-    return { asof, nDates };
-  }, [tierBt]);
+
+  // Pull dynamic stats from the data
+  const totalScored = useMemo(() => getField(tierBt ?? {}, ["total_scored"], null), [tierBt]);
+  const nHoldings = 25; // matches CONFIG
 
   function stats(k: string) {
     return {
@@ -229,8 +227,8 @@ export default function HomePage() {
 
           <Reveal delay={200}>
             <p className="mt-6 text-base sm:text-lg leading-relaxed text-zinc-500 max-w-[520px]">
-              AlphaPanel scores 1,500+ equities on a 0–100 scale using
-              multi-factor quantitative signals. Updated monthly. Backtested across 9 years of market data.
+              AlphaPanel scores every liquid U.S. equity on a 0–100 scale using
+              multi-factor quantitative signals — then tracks what happens next.
             </p>
           </Reveal>
 
@@ -270,21 +268,13 @@ export default function HomePage() {
               <p className="mt-2 text-sm leading-relaxed text-zinc-500 max-w-[640px]">
                 Each month, every stock in the universe receives a score. The table below groups stocks
                 by their score at that moment and tracks what happened next — the average return
-                over the following 3, 6, and 12 months. This is repeated across every monthly snapshot
-                going back to 2017, covering bull markets, drawdowns, rate hikes, and recoveries.
+                over the following 3, 6, and 12 months across all historical snapshots, covering
+                bull markets, drawdowns, rate hikes, and recoveries.
               </p>
             </div>
           </Reveal>
 
           {/* Column headers (desktop) */}
-          <Reveal>
-            <div className="hidden sm:flex items-center justify-end gap-8 px-5 mb-2">
-              {["3M", "6M", "12M"].map((h) => (
-                <div key={h} className="text-[10px] font-bold uppercase tracking-widest text-zinc-700 w-[56px] text-right">{h}</div>
-              ))}
-            </div>
-          </Reveal>
-
           <Reveal>
             <div className="hidden sm:flex items-center justify-end gap-8 px-5 mb-2">
               {["3M", "6M", "12M"].map((h) => (
@@ -331,7 +321,7 @@ export default function HomePage() {
               {
                 step: "03",
                 title: "Portfolio construction",
-                body: "The highest-conviction names form an equal-weight model portfolio, rebalanced monthly. Quality gates filter for liquidity and price integrity before any stock enters the portfolio.",
+                body: "The highest-conviction names form an equal-weight model portfolio. Quality gates filter for liquidity and price integrity before any stock enters the portfolio.",
               },
             ].map((item, i) => (
               <Reveal key={item.step} delay={i * 100}>
@@ -352,10 +342,10 @@ export default function HomePage() {
           <section className="pb-20 sm:pb-24">
             <div className="flex flex-wrap justify-between gap-6 sm:gap-0 border-y border-zinc-800/50 py-8 px-2">
               {[
-                { val: 1500, suffix: "+", label: "Stocks scored" },
-                { val: 9, suffix: " years", label: "Backtest depth" },
+                { val: totalScored ?? 1200, suffix: "+", label: "Stocks scored" },
                 { val: 2, prefix: "$", suffix: "B+", label: "Market cap floor" },
-                { val: 25, suffix: "", label: "Portfolio holdings" },
+                { val: nHoldings, suffix: "", label: "Portfolio holdings" },
+                { val: 3, suffix: "", label: "Factor signals" },
               ].map((s, i) => (
                 <div key={s.label} className="min-w-[100px]">
                   <div className="text-2xl sm:text-3xl font-extrabold tabular-nums text-zinc-100">
@@ -406,8 +396,6 @@ export default function HomePage() {
             <span><span className="text-zinc-500">AlphaPanel</span> — Quantitative equity rankings.</span>
             <div className="flex items-center gap-3">
               <span>Not financial advice</span>
-              <span className="text-zinc-800">·</span>
-              <span>v3.0</span>
             </div>
           </div>
         </footer>
@@ -415,4 +403,3 @@ export default function HomePage() {
     </div>
   );
 }
-
