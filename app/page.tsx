@@ -186,6 +186,7 @@ export default function HomePage() {
   const s90 = stats("90s");
   const s80 = stats("80s");
   const s70 = stats("70s");
+  const s60 = stats("60s");
   const sLow = stats("<60");
 
   return (
@@ -284,11 +285,20 @@ export default function HomePage() {
             </div>
           </Reveal>
 
+          <Reveal>
+            <div className="hidden sm:flex items-center justify-end gap-8 px-5 mb-2">
+              {["3M", "6M", "12M"].map((h) => (
+                <div key={h} className="text-[10px] font-bold uppercase tracking-widest text-zinc-700 w-[56px] text-right">{h}</div>
+              ))}
+            </div>
+          </Reveal>
+
           <div className="space-y-1.5">
             <TierRow range="90–100" label="Leadership" accentClass="bg-emerald-500" {...s90} idx={0} />
             <TierRow range="80–89" label="Positive" accentClass="bg-sky-500" {...s80} idx={1} />
             <TierRow range="70–79" label="Neutral" accentClass="bg-zinc-600" {...s70} idx={2} />
-            <TierRow range="< 60" label="Avoid" accentClass="bg-red-500/70" {...sLow} idx={3} />
+            <TierRow range="60–69" label="Caution" accentClass="bg-amber-500/70" {...s60} idx={3} />
+            <TierRow range="< 60" label="Avoid" accentClass="bg-red-500/70" {...sLow} idx={4} />
           </div>
 
           <Reveal delay={400}>
