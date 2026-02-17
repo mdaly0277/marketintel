@@ -181,7 +181,10 @@ export default function AboutPage() {
                   title: "Momentum crashes",
                   desc: "Momentum strategies can experience sharp drawdowns during market reversals. The 2009 recovery and 2020 COVID snap-back both caused rapid factor rotation. The model doesn't hedge against these events.",
                 },
-                
+                {
+                  title: "Fixed factor weights",
+                  desc: "The 45/35/20 weighting doesn't change with market conditions. In environments where momentum underperforms (like sharp V-shaped recoveries), the model will underperform too.",
+                },
               ].map((item) => (
                 <div key={item.title} className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 p-4">
                   <div className="text-sm font-semibold text-zinc-200 mb-1">{item.title}</div>
@@ -245,7 +248,7 @@ export default function AboutPage() {
                 preceded above-average returns.
               </FAQ>
               <FAQ q="What's included in the backtest?">
-                Historical prices with monthly rebalancing at closing prices. It does not include
+                Historical prices with systematic rebalancing at closing prices. It does not include
                 transaction costs, slippage, taxes, or market impact. The current universe is
                 projected backward, which introduces survivorship bias. The model portfolio
                 is entirely hypothetical.

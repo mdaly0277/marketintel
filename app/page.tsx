@@ -264,10 +264,10 @@ export default function HomePage() {
             <div className="mb-4">
               <h2 className="text-lg sm:text-xl font-bold text-zinc-100">Does the score work?</h2>
               <p className="mt-2 text-sm leading-relaxed text-zinc-500 max-w-[640px]">
-                Each month, every stock in the universe receives a score. The table below groups stocks
-                by their score at that moment and tracks what happened next — the average return
-                over the following 3, 6, and 12 months across all historical snapshots, covering
-                bull markets, drawdowns, rate hikes, and recoveries.
+                Every stock in the universe is continuously scored. The table below groups stocks
+                by their score and tracks what happened next — the average return over the
+                following 3, 6, and 12 months across all historical snapshots, covering bull
+                markets, drawdowns, rate hikes, and recoveries.
               </p>
             </div>
           </Reveal>
@@ -391,3 +391,4 @@ export default function HomePage() {
     </div>
   );
 }
+
