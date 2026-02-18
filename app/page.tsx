@@ -179,11 +179,9 @@ export default function HomePage() {
     };
   }
 
-  const s90 = stats("90s");
-  const s80 = stats("80s");
-  const s70 = stats("70s");
-  const s60 = stats("60s");
-  const sLow = stats("<60");
+  const sPos = stats("75+");
+  const sNeu = stats("40-74");
+  const sNeg = stats("<40");
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 pt-14">
@@ -273,11 +271,9 @@ export default function HomePage() {
           </Reveal>
 
           <div className="space-y-1.5">
-            <TierRow range="90–100" label="Leadership" accentClass="bg-emerald-500" {...s90} idx={0} />
-            <TierRow range="80–89" label="Positive" accentClass="bg-sky-500" {...s80} idx={1} />
-            <TierRow range="70–79" label="Neutral" accentClass="bg-zinc-600" {...s70} idx={2} />
-            <TierRow range="60–69" label="Caution" accentClass="bg-amber-500/70" {...s60} idx={3} />
-            <TierRow range="< 60" label="Avoid" accentClass="bg-red-500/70" {...sLow} idx={4} />
+            <TierRow range="75–100" label="Positive" accentClass="bg-emerald-500" {...sPos} idx={0} />
+            <TierRow range="40–74" label="Neutral" accentClass="bg-zinc-500" {...sNeu} idx={1} />
+            <TierRow range="0–39" label="Negative" accentClass="bg-red-500/70" {...sNeg} idx={2} />
           </div>
 
           <Reveal delay={400}>

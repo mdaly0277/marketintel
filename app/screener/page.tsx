@@ -164,11 +164,9 @@ type TierInfo = { label: string; cls: string; barColor: string };
 
 function getTier(score: number | null): TierInfo {
   if (score === null) return { label: "—", cls: "text-zinc-600", barColor: "bg-zinc-800" };
-  if (score >= 90) return { label: "Leadership", cls: "border-emerald-700/50 bg-emerald-950/40 text-emerald-300", barColor: "bg-emerald-500" };
-  if (score >= 80) return { label: "Positive", cls: "border-sky-700/50 bg-sky-950/40 text-sky-300", barColor: "bg-sky-500" };
-  if (score >= 70) return { label: "Neutral", cls: "border-zinc-700/50 bg-zinc-800/40 text-zinc-400", barColor: "bg-zinc-500" };
-  if (score >= 60) return { label: "Caution", cls: "border-amber-700/50 bg-amber-950/40 text-amber-300", barColor: "bg-amber-500" };
-  return { label: "Avoid", cls: "border-red-800/50 bg-red-950/40 text-red-400", barColor: "bg-red-500" };
+  if (score >= 75) return { label: "Positive", cls: "border-emerald-700/50 bg-emerald-950/40 text-emerald-300", barColor: "bg-emerald-500" };
+  if (score >= 40) return { label: "Neutral", cls: "border-zinc-700/50 bg-zinc-800/40 text-zinc-400", barColor: "bg-zinc-500" };
+  return { label: "Negative", cls: "border-red-800/50 bg-red-950/40 text-red-400", barColor: "bg-red-500" };
 }
 
 /* ── Components ─────────────────────────────────────────── */
@@ -248,25 +246,21 @@ function TH({
 
 /* ── Tier filter chips ──────────────────────────────────── */
 
-type TierFilter = "all" | "leadership" | "positive" | "neutral" | "caution" | "avoid";
+type TierFilter = "all" | "positive" | "neutral" | "negative";
 
 const TIER_CHIPS: { key: TierFilter; label: string; activeClass: string }[] = [
   { key: "all", label: "All", activeClass: "border-zinc-500 bg-zinc-800 text-zinc-100" },
-  { key: "leadership", label: "Leadership", activeClass: "border-emerald-600/50 bg-emerald-950/50 text-emerald-300" },
-  { key: "positive", label: "Positive", activeClass: "border-sky-600/50 bg-sky-950/50 text-sky-300" },
+    { key: "positive", label: "Positive", activeClass: "border-emerald-600/50 bg-emerald-950/50 text-emerald-300" },
   { key: "neutral", label: "Neutral", activeClass: "border-zinc-600/50 bg-zinc-800/50 text-zinc-300" },
-  { key: "caution", label: "Caution", activeClass: "border-amber-600/50 bg-amber-950/50 text-amber-300" },
-  { key: "avoid", label: "Avoid", activeClass: "border-red-700/50 bg-red-950/50 text-red-300" },
+    { key: "negative", label: "Negative", activeClass: "border-red-700/50 bg-red-950/50 text-red-300" },
 ];
 
 function tierFilterMatch(score: number | null, filter: TierFilter): boolean {
   if (filter === "all") return true;
   if (score === null) return false;
-  if (filter === "leadership") return score >= 90;
-  if (filter === "positive") return score >= 80 && score < 90;
-  if (filter === "neutral") return score >= 70 && score < 80;
-  if (filter === "caution") return score >= 60 && score < 70;
-  if (filter === "avoid") return score < 60;
+  if (filter === "positive") return score >= 75;
+  if (filter === "neutral") return score >= 40 && score < 75;
+  if (filter === "negative") return score < 40;
   return true;
 }
 

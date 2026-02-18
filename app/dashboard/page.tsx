@@ -79,8 +79,8 @@ function OutlookBanner({ outlook }: { outlook: AnyObj }) {
     ? "radial-gradient(ellipse at 15% 50%, rgba(239,68,68,0.06), transparent 70%)"
     : "radial-gradient(ellipse at 15% 50%, rgba(245,158,11,0.06), transparent 70%)";
 
-  const fwd3 = outlook.leadership_fwd_3m;
-  const fwd6 = outlook.leadership_fwd_6m;
+  const fwd3 = outlook.positive_fwd_3m ?? outlook.leadership_fwd_3m;
+  const fwd6 = outlook.positive_fwd_6m ?? outlook.leadership_fwd_6m;
   const profile = outlook.profile ?? {};
 
   return (
@@ -99,7 +99,7 @@ function OutlookBanner({ outlook }: { outlook: AnyObj }) {
         {(fwd3 || fwd6) && (
           <div>
             <div className="text-[10px] uppercase tracking-wider text-zinc-600 mb-3">
-              Leadership tier · Historical forward returns in similar conditions
+              Positive tier · Historical forward returns in similar conditions
               <span className="text-zinc-700"> · {outlook.similar_periods} matching periods</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -280,27 +280,27 @@ export default function DashboardPage() {
   const dist = data.score_distribution ?? {};
   const outlook = data.outlook;
   const movers = data.biggest_movers ?? {};
-  const migration = data.leadership_migration ?? {};
+  const migration = data.tier_migration ?? data.leadership_migration ?? {};
   const sectors = data.sector_intelligence ?? [];
   const brief = data.market_overview ?? "";
   const asof = data.asof ?? "—";
 
-  const entering = migration.entering ?? [];
-  const exiting = migration.exiting ?? [];
+  const entering = migration.entering_positive ?? migration.entering ?? [];
+  const exiting = migration.exiting_positive ?? migration.exiting ?? [];
   const moversUp = movers.up ?? [];
   const moversDown = movers.down ?? [];
   const activeMoverList = moverTab === "up" ? moversUp : moversDown;
 
   const distBuckets = [
-    { label: "90–100", key: "90s", color: "bg-emerald-500/60" },
-    { label: "80–89", key: "80s", color: "bg-sky-500/50" },
-    { label: "70–79", key: "70s", color: "bg-zinc-400/40" },
-    { label: "60–69", key: "60s", color: "bg-amber-500/35" },
-    { label: "< 60", key: "below_60", color: "bg-red-500/30" },
+    { label: "75–100", key: "75+", color: "bg-emerald-500/60" },
+    { label: "40–74", key: "40-74", color: "bg-zinc-400/40" },
+    { label: "0–39", key: "<40", color: "bg-red-500/30" },
   ];
 
-  const leadershipDelta = snap.prev_leadership_count !== undefined
-    ? snap.leadership_count - snap.prev_leadership_count : null;
+  const positiveCount = snap.positive_count ?? snap.leadership_count ?? 0;
+  const prevPositiveCount = snap.prev_positive_count ?? snap.prev_leadership_count;
+  const positiveDelta = prevPositiveCount !== undefined
+    ? positiveCount - prevPositiveCount : null;
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 pt-14">
@@ -347,11 +347,11 @@ export default function DashboardPage() {
               sub={snap.new_to_universe ? `${snap.new_to_universe} new this update` : "Liquid U.S. equities"}
             />
             <StatCard
-              label="In Leadership"
-              value={snap.leadership_count ?? "—"}
-              sub={leadershipDelta !== null
-                ? `${leadershipDelta >= 0 ? "+" : ""}${leadershipDelta} vs prior`
-                : "Scoring 90+"}
+              label="Positive Tier"
+              value={positiveCount}
+              sub={positiveDelta !== null
+                ? `${positiveDelta >= 0 ? "+" : ""}${positiveDelta} vs prior`
+                : "Scoring 75+"}
               accent="text-emerald-400"
             />
             <StatCard
@@ -362,10 +362,10 @@ export default function DashboardPage() {
                 : undefined}
             />
             <StatCard
-              label="Below 60"
-              value={snap.avoid_count ?? "—"}
+              label="Negative"
+              value={snap.negative_count ?? "—"}
               sub={snap.total_scored
-                ? `${((snap.avoid_count / snap.total_scored) * 100).toFixed(0)}% of universe`
+                ? `${((snap.negative_count / snap.total_scored) * 100).toFixed(0)}% of universe`
                 : undefined}
               accent="text-red-400/80"
             />
@@ -448,13 +448,13 @@ export default function DashboardPage() {
             {/* Leadership changes */}
             <Reveal delay={150}>
               <div>
-                <SectionHead title="Leadership Changes" sub="Entering and exiting 90+" />
+                <SectionHead title="Positive Tier Changes" sub="Entering and exiting 75+" />
                 <Card>
                   <div className="px-4 sm:px-5 pt-4 pb-3">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                       <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400/80">
-                        New to Leadership ({entering.length})
+                        Entered Positive ({entering.length})
                       </span>
                     </div>
                     {entering.length > 0 ? (
@@ -501,7 +501,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="mt-3 pt-3 border-t border-zinc-900/40 text-[11px] text-zinc-600 flex justify-between">
                     <span>Total: {dist.total ?? "—"}</span>
-                    <span>Leadership: {dist["90s"]?.pct?.toFixed(1) ?? "—"}%</span>
+                    <span>Positive: {dist["75+"]?.pct?.toFixed(1) ?? "—"}%</span>
                   </div>
                 </Card>
               </div>

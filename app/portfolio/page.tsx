@@ -338,7 +338,7 @@ export default function PortfolioPage() {
               <div className="text-sm font-semibold text-zinc-100">Current Holdings</div>
               <div className="text-xs text-zinc-500">As of {data.asof} • {holdings.length} positions • Equal weight</div>
             </div>
-            <a href="/module-1" className="text-xs text-zinc-400 hover:text-zinc-200">
+            <a href="/screener" className="text-xs text-zinc-400 hover:text-zinc-200">
               Open Screener →
             </a>
           </div>
