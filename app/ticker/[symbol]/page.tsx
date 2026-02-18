@@ -2,6 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, ReferenceArea,
+} from "recharts";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, ReferenceArea,
+} from "recharts";
 
 interface HistoryPoint { d: string; s: number; p: number | null; }
 
@@ -68,6 +76,90 @@ function FadeIn({ children, delay = 0, className = "" }: { children: React.React
   );
 }
 
+function ChartTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  const tier = getTierInfo(d.s);
+  return (
+    <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/95 px-4 py-3 backdrop-blur-md shadow-2xl min-w-[160px]">
+      <div className="text-[11px] text-zinc-500 font-mono mb-2">{fmtDateFull(d.d)}</div>
+      {d.p != null && (
+        <div className="flex items-center justify-between gap-4 mb-1.5">
+          <span className="text-[11px] text-zinc-500">Price</span>
+          <span className="text-sm font-bold text-zinc-100 tabular-nums">{fmtPrice(d.p)}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-[11px] text-zinc-500">Score</span>
+        <span className="text-sm font-bold tabular-nums" style={{ color: tier.color }}>{d.s.toFixed(1)}</span>
+      </div>
+      <div className="mt-1.5 pt-1.5 border-t border-zinc-800/60">
+        <span className={`inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider \${tier.badge}`}>{tier.key}</span>
+      </div>
+    </div>
+  );
+}
+
+function TierZones({ data }: { data: HistoryPoint[] }) {
+  if (data.length < 2) return null;
+  const zones: { x1: string; x2: string; tier: typeof TIERS[number] }[] = [];
+  let currentTier = getTierInfo(data[0].s);
+  let zoneStart = data[0].d;
+  for (let i = 1; i < data.length; i++) {
+    const tier = getTierInfo(data[i].s);
+    if (tier.key !== currentTier.key) {
+      zones.push({ x1: zoneStart, x2: data[i].d, tier: currentTier });
+      currentTier = tier;
+      zoneStart = data[i].d;
+    }
+  }
+  zones.push({ x1: zoneStart, x2: data[data.length - 1].d, tier: currentTier });
+  return (<>{zones.map((z, i) => (<ReferenceArea key={i} x1={z.x1} x2={z.x2} fill={z.tier.bg} fillOpacity={1} stroke="none" />))}</>);
+}
+
+function ChartTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  const tier = getTierInfo(d.s);
+  return (
+    <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/95 px-4 py-3 backdrop-blur-md shadow-2xl min-w-[160px]">
+      <div className="text-[11px] text-zinc-500 font-mono mb-2">{fmtDateFull(d.d)}</div>
+      {d.p != null && (
+        <div className="flex items-center justify-between gap-4 mb-1.5">
+          <span className="text-[11px] text-zinc-500">Price</span>
+          <span className="text-sm font-bold text-zinc-100 tabular-nums">{fmtPrice(d.p)}</span>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-[11px] text-zinc-500">Score</span>
+        <span className="text-sm font-bold tabular-nums" style={{ color: tier.color }}>{d.s.toFixed(1)}</span>
+      </div>
+      <div className="mt-1.5 pt-1.5 border-t border-zinc-800/60">
+        <span className={`inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider \${tier.badge}`}>{tier.key}</span>
+      </div>
+    </div>
+  );
+}
+
+function TierZones({ data }: { data: HistoryPoint[] }) {
+  if (data.length < 2) return null;
+  const zones: { x1: string; x2: string; tier: typeof TIERS[number] }[] = [];
+  let currentTier = getTierInfo(data[0].s);
+  let zoneStart = data[0].d;
+  for (let i = 1; i < data.length; i++) {
+    const tier = getTierInfo(data[i].s);
+    if (tier.key !== currentTier.key) {
+      zones.push({ x1: zoneStart, x2: data[i].d, tier: currentTier });
+      currentTier = tier;
+      zoneStart = data[i].d;
+    }
+  }
+  zones.push({ x1: zoneStart, x2: data[data.length - 1].d, tier: currentTier });
+  return (<>{zones.map((z, i) => (<ReferenceArea key={i} x1={z.x1} x2={z.x2} fill={z.tier.bg} fillOpacity={1} stroke="none" />))}</>);
+}
+
 const TIMEFRAMES = [
   { label: "3M", weeks: 13 },
   { label: "6M", weeks: 26 },
@@ -113,6 +205,24 @@ export default function TickerPage() {
   const scoreChange = useMemo(() => {
     if (chartData.length < 2) return null;
     return chartData[chartData.length - 1].s - chartData[0].s;
+  }, [chartData]);
+
+  const priceDomain = useMemo(() => {
+    const prices = chartData.map((d) => d.p).filter((p): p is number => p != null);
+    if (!prices.length) return [0, 100];
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const pad = (max - min) * 0.06;
+    return [Math.max(0, min - pad), max + pad];
+  }, [chartData]);
+
+  const priceDomain = useMemo(() => {
+    const prices = chartData.map((d) => d.p).filter((p): p is number => p != null);
+    if (!prices.length) return [0, 100];
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const pad = (max - min) * 0.06;
+    return [Math.max(0, min - pad), max + pad];
   }, [chartData]);
 
   const tierInfo = data ? getTierInfo(data.current_score) : TIERS[1];
@@ -218,20 +328,42 @@ export default function TickerPage() {
 
         <FadeIn delay={200}>
           <div className="rounded-2xl border border-zinc-800/40 bg-zinc-950/50 overflow-hidden">
-            <div className="flex items-stretch gap-[1px] rounded-lg overflow-hidden h-8 sm:h-10 m-4">
-              {chartData.map((d, i) => {
-                const tier = getTierInfo(d.s);
-                return (
-                  <div key={i} className="flex-1 min-w-0 transition-opacity hover:opacity-80"
-                    style={{ backgroundColor: tier.color, opacity: 0.5 }}
-                    title={`${fmtDateFull(d.d)}: Score ${d.s.toFixed(1)} (${tier.key})`} />
-                );
-              })}
+            <div className="h-[300px] sm:h-[400px] px-2 pt-4 pb-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={tierInfo.color} stopOpacity={0.15} />
+                      <stop offset="100%" stopColor={tierInfo.color} stopOpacity={0.01} />
+                    </linearGradient>
+                  </defs>
+                  <TierZones data={chartData} />
+                  <XAxis dataKey="d" tickFormatter={fmtDate} tick={{ fill: "#3f3f46", fontSize: 10 }} axisLine={{ stroke: "#27272a" }} tickLine={false} minTickGap={60} />
+                  <YAxis domain={priceDomain} tickFormatter={(v: number) => fmtPrice(v)} tick={{ fill: "#3f3f46", fontSize: 10 }} axisLine={false} tickLine={false} width={48} tickCount={6} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area dataKey="p" stroke={tierInfo.color} strokeWidth={1.5} fill="url(#priceGradient)" dot={false} connectNulls isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <div className="flex justify-between px-4 mb-4">
-              <span className="text-[10px] text-zinc-700">{chartData.length > 0 ? fmtDate(chartData[0].d) : ""}</span>
-              <span className="text-[10px] text-zinc-700">{chartData.length > 0 ? fmtDate(chartData[chartData.length - 1].d) : ""}</span>
+
+            {/* Score timeline bar */}
+            <div className="px-4 pb-2">
+              <div className="flex items-stretch gap-[1px] rounded-lg overflow-hidden h-6 sm:h-8">
+                {chartData.map((d, i) => {
+                  const tier = getTierInfo(d.s);
+                  return (
+                    <div key={i} className="flex-1 min-w-0 transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: tier.color, opacity: 0.5 }}
+                      title={`${fmtDateFull(d.d)}: Score ${d.s.toFixed(1)} (${tier.key})`} />
+                  );
+                })}
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-zinc-700">{chartData.length > 0 ? fmtDate(chartData[0].d) : ""}</span>
+                <span className="text-[10px] text-zinc-700">{chartData.length > 0 ? fmtDate(chartData[chartData.length - 1].d) : ""}</span>
+              </div>
             </div>
+
             <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-zinc-800/30 bg-zinc-950/80">
               {TIERS.map((t) => (
                 <div key={t.key} className="flex items-center gap-1.5">
