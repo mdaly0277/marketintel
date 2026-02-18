@@ -199,7 +199,29 @@ export default function TickerPage() {
         if (!res.ok) throw new Error("Not found");
         return res.json();
       })
-      .then((d: TickerData) => { setData(d); setLoading(false); })
+      .then((d: TickerData) => {
+          // Map old tier names to new 3-tier system
+          if (d.tier_perf) {
+            const mapped: Record<string, TierPerf> = {};
+            for (const [k, v] of Object.entries(d.tier_perf)) {
+              if (k === "Leadership" || k === "Positive") {
+                mapped["Positive"] = mapped["Positive"]
+                  ? { n: mapped["Positive"].n + v.n, avg: (mapped["Positive"].avg * mapped["Positive"].n + v.avg * v.n) / (mapped["Positive"].n + v.n), win: (mapped["Positive"].win * mapped["Positive"].n + v.win * v.n) / (mapped["Positive"].n + v.n) }
+                  : { ...v };
+              } else if (k === "Neutral") {
+                mapped["Neutral"] = mapped["Neutral"]
+                  ? { n: mapped["Neutral"].n + v.n, avg: (mapped["Neutral"].avg * mapped["Neutral"].n + v.avg * v.n) / (mapped["Neutral"].n + v.n), win: (mapped["Neutral"].win * mapped["Neutral"].n + v.win * v.n) / (mapped["Neutral"].n + v.n) }
+                  : { ...v };
+              } else {
+                mapped["Negative"] = mapped["Negative"]
+                  ? { n: mapped["Negative"].n + v.n, avg: (mapped["Negative"].avg * mapped["Negative"].n + v.avg * v.n) / (mapped["Negative"].n + v.n), win: (mapped["Negative"].win * mapped["Negative"].n + v.win * v.n) / (mapped["Negative"].n + v.n) }
+                  : { ...v };
+              }
+            }
+            d.tier_perf = mapped;
+          }
+          setData(d); setLoading(false);
+        })
       .catch(() => { setError(true); setLoading(false); });
   }, [symbol]);
 
