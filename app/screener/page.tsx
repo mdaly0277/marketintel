@@ -594,8 +594,12 @@ export default function ScreenerPage() {
                       </td>
 
                       {/* Ticker */}
-                      <td className="px-2 sm:px-3 py-2 sm:py-2.5 font-bold text-zinc-200 tracking-wide whitespace-nowrap text-[12px] sm:text-[13px]">
-                        {r._ticker || "—"}
+                      <td className="px-2 sm:px-3 py-2 sm:py-2.5 font-bold tracking-wide whitespace-nowrap text-[12px] sm:text-[13px]">
+                        {r._ticker ? (
+                          <a href={`/ticker/${r._ticker}`} className="text-zinc-200 hover:text-blue-400 transition-colors">
+                            {r._ticker}
+                          </a>
+                        ) : "—"}
                       </td>
 
                       {/* Name (desktop) */}
