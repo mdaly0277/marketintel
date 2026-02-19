@@ -54,11 +54,36 @@ const SCORE_ALIASES = ["raw_composite", "RS_Global", "rs_global", "RS", "rs", "s
 const TICKER_ALIASES = ["ticker", "symbol", "Ticker"];
 const ASOF_ALIASES = ["asof_date", "as_of", "date", "asof"];
 
+/** Proper CSV row parser — handles quoted fields with commas inside them */
+function parseCSVRow(text: string): string[] {
+  const fields: string[] = [];
+  let field = "";
+  let inQ = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQ = false;
+      } else {
+        field += c;
+      }
+      continue;
+    }
+    if (c === '"') inQ = true;
+    else if (c === ",") { fields.push(field.trim()); field = ""; }
+    else if (c !== "\r") field += c;
+  }
+  fields.push(field.trim());
+  return fields;
+}
+
 function parseCSVForScore(text: string, targetTicker: string): { score: number | null; asof: string | null } {
   const lines = text.split("\n").filter((l) => l.trim());
   if (lines.length < 2) return { score: null, asof: null };
 
-  const header = lines[0].split(",").map((h) => h.trim());
+  const header = parseCSVRow(lines[0]);
   const hLower = header.map((h) => h.toLowerCase());
 
   // Find column indices
@@ -70,7 +95,7 @@ function parseCSVForScore(text: string, targetTicker: string): { score: number |
 
   const target = targetTicker.toUpperCase();
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+    const cols = parseCSVRow(lines[i]);
     if (cols[tickerIdx]?.toUpperCase() === target) {
       const raw = parseFloat(cols[scoreIdx]);
       const score = Number.isFinite(raw) ? Math.round(raw * 10) / 10 : null;
@@ -634,3 +659,4 @@ export default function TickerPage() {
     </div>
   );
 }
+
