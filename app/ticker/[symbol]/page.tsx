@@ -31,10 +31,11 @@ interface TickerData {
 
 /* ── Constants ─────────────────────────────────────────── */
 
+// FIX 2: Bumped bg opacity from 0.08/0.05/0.06 → 0.18/0.12/0.15 for mobile visibility
 const TIERS = [
-  { key: "Positive", range: "75–100", color: "#34d399", bg: "rgba(52,211,153,0.08)", border: "border-emerald-800/40", text: "text-emerald-400", badge: "border-emerald-700/50 bg-emerald-950/40 text-emerald-300" },
-  { key: "Neutral", range: "40–74", color: "#71717a", bg: "rgba(113,113,122,0.05)", border: "border-zinc-700/40", text: "text-zinc-400", badge: "border-zinc-700/50 bg-zinc-800/40 text-zinc-400" },
-  { key: "Negative", range: "0–39", color: "#f87171", bg: "rgba(248,113,113,0.06)", border: "border-red-800/40", text: "text-red-400", badge: "border-red-800/50 bg-red-950/40 text-red-400" },
+  { key: "Positive", range: "75–100", color: "#34d399", bg: "rgba(52,211,153,0.18)", border: "border-emerald-800/40", text: "text-emerald-400", badge: "border-emerald-700/50 bg-emerald-950/40 text-emerald-300" },
+  { key: "Neutral", range: "40–74", color: "#71717a", bg: "rgba(113,113,122,0.12)", border: "border-zinc-700/40", text: "text-zinc-400", badge: "border-zinc-700/50 bg-zinc-800/40 text-zinc-400" },
+  { key: "Negative", range: "0–39", color: "#f87171", bg: "rgba(248,113,113,0.15)", border: "border-red-800/40", text: "text-red-400", badge: "border-red-800/50 bg-red-950/40 text-red-400" },
 ] as const;
 
 const TIMEFRAMES = [
@@ -44,6 +45,41 @@ const TIMEFRAMES = [
   { label: "3Y", weeks: 156 },
   { label: "ALL", weeks: Infinity },
 ] as const;
+
+/* ── CSV score lookup helper ───────────────────────────── */
+
+const CSV_PATH = "/data/rs_latest.csv";
+
+const SCORE_ALIASES = ["raw_composite", "RS_Global", "rs_global", "RS", "rs", "score", "RS_Score"];
+const TICKER_ALIASES = ["ticker", "symbol", "Ticker"];
+const ASOF_ALIASES = ["asof_date", "as_of", "date", "asof"];
+
+function parseCSVForScore(text: string, targetTicker: string): { score: number | null; asof: string | null } {
+  const lines = text.split("\n").filter((l) => l.trim());
+  if (lines.length < 2) return { score: null, asof: null };
+
+  const header = lines[0].split(",").map((h) => h.trim());
+  const hLower = header.map((h) => h.toLowerCase());
+
+  // Find column indices
+  const tickerIdx = hLower.findIndex((h) => TICKER_ALIASES.some((a) => a.toLowerCase() === h));
+  const scoreIdx = hLower.findIndex((h) => SCORE_ALIASES.some((a) => a.toLowerCase() === h));
+  const asofIdx = hLower.findIndex((h) => ASOF_ALIASES.some((a) => a.toLowerCase() === h));
+
+  if (tickerIdx === -1 || scoreIdx === -1) return { score: null, asof: null };
+
+  const target = targetTicker.toUpperCase();
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+    if (cols[tickerIdx]?.toUpperCase() === target) {
+      const raw = parseFloat(cols[scoreIdx]);
+      const score = Number.isFinite(raw) ? Math.round(raw * 10) / 10 : null;
+      const asof = asofIdx !== -1 ? cols[asofIdx] || null : null;
+      return { score, asof };
+    }
+  }
+  return { score: null, asof: null };
+}
 
 /* ── Helpers ───────────────────────────────────────────── */
 
@@ -194,34 +230,54 @@ export default function TickerPage() {
     setLoading(true);
     setError(false);
 
-    fetch(`/data/ticker_history/${symbol}.json`, { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Not found");
-        return res.json();
-      })
-      .then((d: TickerData) => {
-          // Map old tier names to new 3-tier system
-          if (d.tier_perf) {
-            const mapped: Record<string, TierPerf> = {};
-            for (const [k, v] of Object.entries(d.tier_perf)) {
-              if (k === "Leadership" || k === "Positive") {
-                mapped["Positive"] = mapped["Positive"]
-                  ? { n: mapped["Positive"].n + v.n, avg: (mapped["Positive"].avg * mapped["Positive"].n + v.avg * v.n) / (mapped["Positive"].n + v.n), win: (mapped["Positive"].win * mapped["Positive"].n + v.win * v.n) / (mapped["Positive"].n + v.n) }
-                  : { ...v };
-              } else if (k === "Neutral") {
-                mapped["Neutral"] = mapped["Neutral"]
-                  ? { n: mapped["Neutral"].n + v.n, avg: (mapped["Neutral"].avg * mapped["Neutral"].n + v.avg * v.n) / (mapped["Neutral"].n + v.n), win: (mapped["Neutral"].win * mapped["Neutral"].n + v.win * v.n) / (mapped["Neutral"].n + v.n) }
-                  : { ...v };
-              } else {
-                mapped["Negative"] = mapped["Negative"]
-                  ? { n: mapped["Negative"].n + v.n, avg: (mapped["Negative"].avg * mapped["Negative"].n + v.avg * v.n) / (mapped["Negative"].n + v.n), win: (mapped["Negative"].win * mapped["Negative"].n + v.win * v.n) / (mapped["Negative"].n + v.n) }
-                  : { ...v };
-              }
+    // FIX 1: Fetch BOTH the ticker JSON and rs_latest.csv in parallel.
+    // The CSV score is the source of truth (same as screener).
+    Promise.all([
+      fetch(`/data/ticker_history/${symbol}.json`, { cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) throw new Error("Not found");
+          return res.json();
+        }),
+      fetch(CSV_PATH, { cache: "no-store" })
+        .then((res) => (res.ok ? res.text() : ""))
+        .catch(() => ""),
+    ])
+      .then(([d, csvText]: [TickerData, string]) => {
+        // Map old tier names to new 3-tier system
+        if (d.tier_perf) {
+          const mapped: Record<string, TierPerf> = {};
+          for (const [k, v] of Object.entries(d.tier_perf)) {
+            if (k === "Leadership" || k === "Positive") {
+              mapped["Positive"] = mapped["Positive"]
+                ? { n: mapped["Positive"].n + v.n, avg: (mapped["Positive"].avg * mapped["Positive"].n + v.avg * v.n) / (mapped["Positive"].n + v.n), win: (mapped["Positive"].win * mapped["Positive"].n + v.win * v.n) / (mapped["Positive"].n + v.n) }
+                : { ...v };
+            } else if (k === "Neutral") {
+              mapped["Neutral"] = mapped["Neutral"]
+                ? { n: mapped["Neutral"].n + v.n, avg: (mapped["Neutral"].avg * mapped["Neutral"].n + v.avg * v.n) / (mapped["Neutral"].n + v.n), win: (mapped["Neutral"].win * mapped["Neutral"].n + v.win * v.n) / (mapped["Neutral"].n + v.n) }
+                : { ...v };
+            } else {
+              mapped["Negative"] = mapped["Negative"]
+                ? { n: mapped["Negative"].n + v.n, avg: (mapped["Negative"].avg * mapped["Negative"].n + v.avg * v.n) / (mapped["Negative"].n + v.n), win: (mapped["Negative"].win * mapped["Negative"].n + v.win * v.n) / (mapped["Negative"].n + v.n) }
+                : { ...v };
             }
-            d.tier_perf = mapped;
           }
-          setData(d); setLoading(false);
-        })
+          d.tier_perf = mapped;
+        }
+
+        // Override score and asof from CSV (source of truth) so it matches the screener
+        if (csvText) {
+          const { score: csvScore, asof: csvAsof } = parseCSVForScore(csvText, symbol);
+          if (csvScore !== null) {
+            d.current_score = csvScore;
+          }
+          if (csvAsof) {
+            d.asof = csvAsof;
+          }
+        }
+
+        setData(d);
+        setLoading(false);
+      })
       .catch(() => { setError(true); setLoading(false); });
   }, [symbol]);
 
